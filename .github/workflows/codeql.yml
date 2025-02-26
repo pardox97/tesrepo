@@ -60,7 +60,7 @@ jobs:
         fetch-depth: 2
 
 
-    - name: Debug: List Changed Files
+    - name: Debug and List Changed Files
       run: |
         git fetch origin ${{ github.base_ref }}
         git diff --name-only origin/${{ github.base_ref }}...HEAD
