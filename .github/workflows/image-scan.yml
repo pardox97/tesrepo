@@ -30,13 +30,31 @@ jobs:
             --output text)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+          trivy --version
+
       - name: Scan Image with Trivy and Save Report
         run: |
           trivy image 801754344896.dkr.ecr.us-west-2.amazonaws.com/testrepo:${{ env.LATEST_TAG }} \
           --format json --severity CRITICAL,HIGH > trivy-report.json
-          
+
+      - name: Debug Trivy Report
+        run: |
+          if [ ! -f trivy-report.json ]; then
+            echo "❌ trivy-report.json NOT FOUND!"
+            exit 1
+          else
+            echo "✅ trivy-report.json exists!"
+            ls -lh trivy-report.json
+          fi
+
       - name: Upload Vulnerability Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
