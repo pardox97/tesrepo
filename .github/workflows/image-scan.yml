@@ -26,7 +26,7 @@ jobs:
         id: get-latest-tag
         run: |
           LATEST_TAG=$(aws ecr describe-images \
-            --repository-name my-repo \
+            --repository-name testrepo \
             --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
             --output text)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
