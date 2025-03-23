@@ -1,0 +1,52 @@
+name: Scan ECR Image for Vulnerabilities
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: us-west-2  # Change to your region
+          role-to-assume: arn:aws:iam::801754344896:role/GitHubActionsECR
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get Latest Image Tag
+        id: get-latest-tag
+        run: |
+          LATEST_TAG=$(aws ecr describe-images \
+            --repository-name my-repo \
+            --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
+            --output text)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Scan Image with Trivy and Save Report
+        run: |
+          trivy image 801754344896.dkr.ecr.us-west-2.amazonaws.com/testrepo:${{ env.LATEST_TAG }} \
+          --format json --severity CRITICAL,HIGH > trivy-report.json
+          
+      - name: Upload Vulnerability Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+      - name: Display Vulnerabilities
+        run: cat trivy-report.json | jq '.Results[].Vulnerabilities[] | {ID, PkgName, InstalledVersion, Severity, Title, Description}'
+
+      - name: Fail on Critical Vulnerabilities
+        run: |
+          if jq -e '.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL" or .Severity == "HIGH")' trivy-report.json > /dev/null; then
+            echo "❌ Critical or High vulnerabilities found!"
+            exit 1
+          fi
