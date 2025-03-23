@@ -8,8 +8,8 @@ from email import encoders
 
 # AWS SES Configuration
 AWS_REGION = os.getenv("AWS_REGION")
-SENDER = "cardosomelford@gmail.com"  # Must be a verified email in AWS SES
-RECIPIENT =  "cardosomelford@gmail.com"  # Must be a verified email in AWS SES
+SENDER = "cardozomelford@gmail.com"  # Must be a verified email in AWS SES
+RECIPIENT =  "cardozomelford@gmail.com"  # Must be a verified email in AWS SES
 SUBJECT = "Vulnerability Scan Report"
 
 # Read the Trivy report
