@@ -68,12 +68,11 @@ jobs:
         run: |
           aws s3 cp trivy-report.json s3://tesbucketforactions/trivy-report.json
 
-      - name: Send Email via SES with S3 Link
-        run: |
-          aws ses send-email \
-            --from "cardozomelford@gmail.com" \
-            --destination "ToAddresses=['cardozomelford@gmail.com']" \
-            --message "Subject={Data='Vulnerability Scan Report'},Body={Text={Data='The vulnerability report is available at https://s3.amazonaws.com/tesbucketforactions/trivy-report.json'}}"
+      - name: Install Python and Dependencies
+        run: pip install boto3
+
+      - name: Send Vulnerability Report via SES
+        run: python send_email.py
 
       - name: Fail on Critical Vulnerabilities
         run: |
