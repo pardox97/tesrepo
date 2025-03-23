@@ -72,7 +72,7 @@ jobs:
         run: |
           aws ses send-email \
             --from "alerts@example.com" \
-            --destination "ToAddresses=['security-team@example.com']" \
+            --destination "ToAddresses=['cardozomelford@gmail.com']" \
             --message "Subject={Data='Vulnerability Scan Report'},Body={Text={Data='The vulnerability report is available at https://s3.amazonaws.com/tesbucketforactions/trivy-report.json'}}"
 
       - name: Fail on Critical Vulnerabilities
