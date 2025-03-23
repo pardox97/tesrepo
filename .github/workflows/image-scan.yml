@@ -64,6 +64,14 @@ jobs:
       - name: Display Vulnerabilities
         run: cat trivy-report.json | jq '.Results[].Vulnerabilities[] | {ID, PkgName, InstalledVersion, Severity, Title, Description}'
 
+      - name: Send Vulnerability Report via SES
+        run: |
+          aws ses send-email \
+            --from "alerts@example.com" \
+            --destination "ToAddresses=['cardozomelford@gmail.com']" \
+            --message "Subject={Data='Vulnerability Scan Report'},Body={Text={Data='The latest vulnerability scan report is attached.'}}" \
+            --attachments "file://trivy-report.json"
+
       - name: Fail on Critical Vulnerabilities
         run: |
           if jq -e '.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL" or .Severity == "HIGH")' trivy-report.json > /dev/null; then
