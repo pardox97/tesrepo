@@ -44,7 +44,7 @@ jobs:
           sudo mv ./bin/trivy /usr/local/bin/
           trivy --version  # Verify installation
 
-      - name: Scan ECR Images
+      - name: Scan Image with Trivy and Save Report
         run: |
           ECR_REPOS="${{ github.event.inputs.ecr_repos }}"
           AWS_ACCOUNT_ID="801754344896"  # Replace with actual AWS account ID
