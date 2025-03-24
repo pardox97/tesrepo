@@ -26,12 +26,23 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Install Dependencies
+      - name: Get Latest Image Tag
+        id: get-latest-tag
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
+          LATEST_TAG=$(aws ecr describe-images \
+            --repository-name testrepo \
+            --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
+            --output text)
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install Trivy
+        run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
           sudo mv ./bin/trivy /usr/local/bin/
-          trivy --version
+          trivy --version  # Verify installation
 
       - name: Scan ECR Images
         run: |
@@ -55,26 +66,36 @@ jobs:
 
             IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO:$LATEST_TAG"
             echo "Scanning $IMAGE_URI ..."
-            trivy image --format json --severity CRITICAL,HIGH -o trivy-report-$REPO.json $IMAGE_URI
+            trivy image $IMAGE_URI --format json --severity CRITICAL,HIGH -o trivy-report.json 
           done
 
-      - name: Debug Trivy Reports
-        run: |
-          ls -lh trivy-report-*.json || echo "⚠️ No Trivy reports found!"
+      # - name: Scan Image with Trivy and Save Report
+      #   run: |
+      #     trivy image 801754344896.dkr.ecr.us-west-2.amazonaws.com/testrepo:${{ env.LATEST_TAG }} \
+      #     --format json --severity CRITICAL,HIGH > trivy-report.json
 
-      - name: Upload Vulnerability Reports
+      - name: Debug Trivy Report
+        run: |
+          if [ ! -f trivy-report.json ]; then
+            echo "❌ trivy-report.json NOT FOUND!"
+            exit 1
+          else
+            echo "✅ trivy-report.json exists!"
+            ls -lh trivy-report.json
+          fi
+
+      - name: Upload Vulnerability Report
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-reports
-          path: trivy-report-*.json
+          name: trivy-report
+          path: trivy-report.json
 
-      - name: Upload Reports to S3
+      - name: Display Vulnerabilities
+        run: cat trivy-report.json | jq '.Results[].Vulnerabilities[] | {ID, PkgName, InstalledVersion, Severity, Title, Description}'
+
+      - name: Upload Report to S3
         run: |
-          for file in trivy-report-*.json; do
-            if [[ -f "$file" ]]; then
-              aws s3 cp "$file" s3://tesbucketforactions/"$file"
-            fi
-          done
+          aws s3 cp trivy-report.json s3://tesbucketforactions/trivy-report.json
 
       - name: Install Python and Dependencies
         run: pip install boto3
@@ -84,9 +105,7 @@ jobs:
 
       - name: Fail on Critical Vulnerabilities
         run: |
-          for file in trivy-report-*.json; do
-            if jq -e '.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL" or .Severity == "HIGH")' "$file" > /dev/null; then
-              echo "❌ Critical or High vulnerabilities found in $file!"
-              exit 1
-            fi
-          done
+          if jq -e '.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL" or .Severity == "HIGH")' trivy-report.json > /dev/null; then
+            echo "❌ Critical or High vulnerabilities found!"
+            exit 1
+          fi
