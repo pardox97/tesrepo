@@ -24,28 +24,64 @@ for result in report.get("Results", []):
     target = result.get("Target", "Unknown Target")
     
     for vuln in result.get("Vulnerabilities", []):
+        severity_color = "🔴" if vuln["Severity"] == "CRITICAL" else "🟠"
         vuln_summary.append(f"""
-        <hr>
-        <h3>🔹 {vuln['VulnerabilityID']}</h3>
-        <ul>
-            <li><b>Package:</b> {vuln['PkgName']} ({vuln['InstalledVersion']})</li>
-            <li><b>⚠️ Severity:</b> <b>{vuln['Severity']}</b></li>
-            <li><b>✅ Fixed Version:</b> {vuln.get('FixedVersion', 'N/A')}</li>
-            <li><b>📝 Description:</b> {vuln['Description']}</li>
-            <li><b>🔗 More Info:</b> <a href="{vuln['PrimaryURL']}">{vuln['PrimaryURL']}</a></li>
-            <li><b>🛠️ Affected Target:</b> {target}</li>
-        </ul>
+            <tr>
+                <td>{severity_color} <b>{vuln['VulnerabilityID']}</b></td>
+                <td>{vuln['PkgName']} ({vuln['InstalledVersion']})</td>
+                <td style="color:{'red' if vuln['Severity'] == 'CRITICAL' else 'orange'};"><b>{vuln['Severity']}</b></td>
+                <td>{vuln.get('FixedVersion', 'N/A')}</td>
+                <td>{vuln['Description']}</td>
+                <td><a href="{vuln['PrimaryURL']}">More Info</a></td>
+            </tr>
         """)
 
-# Format the email body with HTML
+# Format the email body with enhanced HTML & CSS
 if vuln_summary:
     email_body = f"""
     <html>
+        <head>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                }}
+                h2 {{
+                    color: #d32f2f;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                th, td {{
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                }}
+                th {{
+                    background-color: #f44336;
+                    color: white;
+                }}
+                tr:nth-child(even) {{ background-color: #f9f9f9; }}
+            </style>
+        </head>
         <body>
             <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
             <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_summary)}</p>
             <p>📎 Full report attached.</p>
-            {"".join(vuln_summary[:5])}  <!-- Show first 5 vulnerabilities -->
+
+            <table>
+                <tr>
+                    <th>CVE ID</th>
+                    <th>Package</th>
+                    <th>Severity</th>
+                    <th>Fixed Version</th>
+                    <th>Description</th>
+                    <th>More Info</th>
+                </tr>
+                {"".join(vuln_summary[:5])}  <!-- Show first 5 vulnerabilities -->
+            </table>
+
             <hr>
             <h3>🚀 Next Steps</h3>
             <ul>
@@ -57,7 +93,13 @@ if vuln_summary:
     </html>
     """
 else:
-    email_body = "<h3>✅ No vulnerabilities found in the latest scan.</h3>"
+    email_body = """
+    <html>
+        <body>
+            <h3 style="color:green;">✅ No vulnerabilities found in the latest scan.</h3>
+        </body>
+    </html>
+    """
 
 # Create email message
 msg = MIMEMultipart()
