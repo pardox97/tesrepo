@@ -2,6 +2,10 @@ name: Scan ECR Image for Vulnerabilities
 
 on:
   workflow_dispatch:
+    inputs:
+      ecr_repos:
+        description: "Comma-separated list of ECR repositories to scan"
+        required: true
 
 jobs:
   scan-image:
@@ -42,8 +46,33 @@ jobs:
 
       - name: Scan Image with Trivy and Save Report
         run: |
-          trivy image 801754344896.dkr.ecr.us-west-2.amazonaws.com/testrepo:${{ env.LATEST_TAG }} \
-          --format json --severity CRITICAL,HIGH > trivy-report.json
+          ECR_REPOS="${{ github.event.inputs.ecr_repos }}"
+          AWS_ACCOUNT_ID="801754344896"  # Replace with actual AWS account ID
+          REGION="us-west-2"
+
+          IFS=',' read -r -a REPO_ARRAY <<< "$ECR_REPOS"
+
+          for REPO in "${REPO_ARRAY[@]}"; do
+            echo "🔍 Fetching latest image tag for $REPO..."
+            LATEST_TAG=$(aws ecr describe-images \
+              --repository-name $REPO \
+              --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
+              --output text)
+
+            if [[ "$LATEST_TAG" == "None" || -z "$LATEST_TAG" ]]; then
+              echo "⚠️ No valid image tag found for $REPO, skipping..."
+              continue
+            fi
+
+            IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO:$LATEST_TAG"
+            echo "Scanning $IMAGE_URI ..."
+            trivy image $IMAGE_URI --format json --severity CRITICAL,HIGH -o trivy-report.json 
+          done
+
+      # - name: Scan Image with Trivy and Save Report
+      #   run: |
+      #     trivy image 801754344896.dkr.ecr.us-west-2.amazonaws.com/testrepo:${{ env.LATEST_TAG }} \
+      #     --format json --severity CRITICAL,HIGH > trivy-report.json
 
       - name: Debug Trivy Report
         run: |
