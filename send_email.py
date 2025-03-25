@@ -19,84 +19,116 @@ with open(ATTACHMENT_PATH, "r") as file:
     report = json.load(file)
 
 # Extract vulnerabilities
-vuln_summary = []
+vuln_cards = []
 for result in report.get("Results", []):
     target = result.get("Target", "Unknown Target")
-    
+
     for vuln in result.get("Vulnerabilities", []):
-        severity_color = "🔴" if vuln["Severity"] == "CRITICAL" else "🟠"
-        vuln_summary.append(f"""
-            <tr>
-                <td>{severity_color} <b>{vuln['VulnerabilityID']}</b></td>
-                <td>{vuln['PkgName']} ({vuln['InstalledVersion']})</td>
-                <td style="color:{'red' if vuln['Severity'] == 'CRITICAL' else 'orange'};"><b>{vuln['Severity']}</b></td>
-                <td>{vuln.get('FixedVersion', 'N/A')}</td>
-                <td>{vuln['Description']}</td>
-                <td><a href="{vuln['PrimaryURL']}">More Info</a></td>
-            </tr>
+        severity_color = "#d32f2f" if vuln["Severity"] == "CRITICAL" else "#f57c00"
+        severity_badge = f'<span style="background-color:{severity_color}; color:#fff; padding:5px 10px; border-radius:5px; font-size:12px;">{vuln["Severity"]}</span>'
+
+        vuln_cards.append(f"""
+            <div class="card">
+                <h3>{vuln['VulnerabilityID']}</h3>
+                <p><b>Package:</b> {vuln['PkgName']} ({vuln['InstalledVersion']})</p>
+                <p>{severity_badge}</p>
+                <p><b>Fixed Version:</b> {vuln.get('FixedVersion', 'N/A')}</p>
+                <p class="desc">{vuln['Description']}</p>
+                <a href="{vuln['PrimaryURL']}" class="btn">More Info</a>
+            </div>
         """)
 
-# Format the email body with enhanced HTML & CSS
-if vuln_summary:
+# Format the email body with modern UI styles
+if vuln_cards:
     email_body = f"""
     <html>
         <head>
             <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
                 body {{
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
+                    font-family: 'Inter', sans-serif;
+                    background-color: #f4f4f4;
+                    color: #333;
+                    padding: 20px;
                 }}
                 h2 {{
                     color: #d32f2f;
+                    text-align: center;
                 }}
-                table {{
-                    width: 100%;
-                    border-collapse: collapse;
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: #fff;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
                 }}
-                th, td {{
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    text-align: left;
+                .card {{
+                    background: #fff;
+                    padding: 15px;
+                    margin: 10px 0;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
                 }}
-                th {{
-                    background-color: #f44336;
-                    color: white;
+                .desc {{
+                    font-size: 14px;
+                    color: #555;
                 }}
-                tr:nth-child(even) {{ background-color: #f9f9f9; }}
+                .btn {{
+                    display: inline-block;
+                    margin-top: 10px;
+                    padding: 8px 12px;
+                    background: #0288d1;
+                    color: #fff;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-size: 14px;
+                }}
             </style>
         </head>
         <body>
-            <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
-            <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_summary)}</p>
-            <p>📎 Full report attached.</p>
-
-            <table>
-                <tr>
-                    <th>CVE ID</th>
-                    <th>Package</th>
-                    <th>Severity</th>
-                    <th>Fixed Version</th>
-                    <th>Description</th>
-                    <th>More Info</th>
-                </tr>
-                {"".join(vuln_summary[:5])}  <!-- Show first 5 vulnerabilities -->
-            </table>
-
-            <hr>
-            <h3>🚀 Next Steps</h3>
-            <ul>
-                <li>🔹 Upgrade affected packages to the recommended fixed versions.</li>
-                <li>🔹 Investigate if any applications rely on these vulnerable libraries.</li>
-                <li>🔹 Monitor logs for any signs of exploitation.</li>
-            </ul>
+            <div class="container">
+                <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
+                <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_cards)}</p>
+                <p>📎 Full report attached.</p>
+                {"".join(vuln_cards[:5])}  <!-- Show first 5 vulnerabilities -->
+                <hr>
+                <h3>🚀 Next Steps</h3>
+                <ul>
+                    <li>🔹 Upgrade affected packages to the recommended fixed versions.</li>
+                    <li>🔹 Investigate if any applications rely on these vulnerable libraries.</li>
+                    <li>🔹 Monitor logs for any signs of exploitation.</li>
+                </ul>
+            </div>
         </body>
     </html>
     """
 else:
     email_body = """
     <html>
+        <head>
+            <style>
+                body {{
+                    font-family: 'Inter', sans-serif;
+                    background-color: #f4f4f4;
+                    color: #333;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: #fff;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    text-align: center;
+                }}
+            </style>
+        </head>
         <body>
-            <h3 style="color:green;">✅ No vulnerabilities found in the latest scan.</h3>
+            <div class="container">
+                <h3 style="color:green;">✅ No vulnerabilities found in the latest scan.</h3>
+            </div>
         </body>
     </html>
     """
