@@ -11,7 +11,7 @@ from email import encoders
 AWS_REGION = os.getenv("AWS_REGION")
 SENDER = "cardozomelford@gmail.com"  # Must be verified in AWS SES
 RECIPIENT = "cardozomelford@gmail.com"  # Must be verified in AWS SES
-SUBJECT = "🚨 Trivy Vulnerability Scan Report 🚨"
+SUBJECT = "🚨 Trivy Security Scan Report 🚨"
 
 # Load the Trivy report
 ATTACHMENT_PATH = "trivy-report.json"
@@ -25,80 +25,74 @@ for result in report.get("Results", []):
 
     for vuln in result.get("Vulnerabilities", []):
         severity_color = "#d32f2f" if vuln["Severity"] == "CRITICAL" else "#f57c00"
-        severity_badge = f'<span style="background-color:{severity_color}; color:#fff; padding:5px 10px; border-radius:5px; font-size:12px;">{vuln["Severity"]}</span>'
-
         vuln_cards.append(f"""
-            <div class="card">
+            <div class="vuln-card">
+                <p class="severity" style="background: {severity_color};">{vuln["Severity"]}</p>
                 <h3>{vuln['VulnerabilityID']}</h3>
                 <p><b>Package:</b> {vuln['PkgName']} ({vuln['InstalledVersion']})</p>
-                <p>{severity_badge}</p>
                 <p><b>Fixed Version:</b> {vuln.get('FixedVersion', 'N/A')}</p>
-                <p class="desc">{vuln['Description']}</p>
-                <a href="{vuln['PrimaryURL']}" class="btn">More Info</a>
+                <a href="{vuln['PrimaryURL']}" class="link">More Info</a>
             </div>
         """)
 
-# Format the email body with modern UI styles
+# Minimalistic email design
 if vuln_cards:
     email_body = f"""
     <html>
         <head>
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
                 body {{
-                    font-family: 'Inter', sans-serif;
-                    background-color: #f4f4f4;
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f9f9f9;
                     color: #333;
                     padding: 20px;
+                    text-align: center;
                 }}
                 h2 {{
                     color: #d32f2f;
-                    text-align: center;
+                    margin-bottom: 10px;
                 }}
                 .container {{
-                    max-width: 600px;
+                    width: 80%;
                     margin: 0 auto;
+                    max-width: 600px;
                     background: #fff;
                     padding: 20px;
                     border-radius: 10px;
                     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
                 }}
-                .card {{
+                .vuln-card {{
                     background: #fff;
                     padding: 15px;
-                    margin: 10px 0;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                }}
-                .desc {{
-                    font-size: 14px;
-                    color: #555;
-                }}
-                .btn {{
-                    display: inline-block;
-                    margin-top: 10px;
-                    padding: 8px 12px;
-                    background: #0288d1;
-                    color: #fff;
-                    text-decoration: none;
+                    margin: 15px 0;
+                    border-left: 5px solid #d32f2f;
                     border-radius: 5px;
-                    font-size: 14px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                }}
+                .severity {{
+                    color: #fff;
+                    padding: 5px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin-bottom: 5px;
+                }}
+                .link {{
+                    text-decoration: none;
+                    color: #0288d1;
+                    font-weight: bold;
                 }}
             </style>
         </head>
         <body>
             <div class="container">
-                <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
-                <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_cards)}</p>
-                <p>📎 Full report attached.</p>
+                <h2>🚨 Security Scan Report 🚨</h2>
+                <p>📌 <b>{len(vuln_cards)} Critical/High vulnerabilities found.</b></p>
                 {"".join(vuln_cards[:5])}  <!-- Show first 5 vulnerabilities -->
                 <hr>
-                <h3>🚀 Next Steps</h3>
-                <ul>
-                    <li>🔹 Upgrade affected packages to the recommended fixed versions.</li>
-                    <li>🔹 Investigate if any applications rely on these vulnerable libraries.</li>
-                    <li>🔹 Monitor logs for any signs of exploitation.</li>
-                </ul>
+                <p>📎 Full report attached.</p>
             </div>
         </body>
     </html>
@@ -106,29 +100,8 @@ if vuln_cards:
 else:
     email_body = """
     <html>
-        <head>
-            <style>
-                body {{
-                    font-family: 'Inter', sans-serif;
-                    background-color: #f4f4f4;
-                    color: #333;
-                    padding: 20px;
-                }}
-                .container {{
-                    max-width: 600px;
-                    margin: 0 auto;
-                    background: #fff;
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                    text-align: center;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h3 style="color:green;">✅ No vulnerabilities found in the latest scan.</h3>
-            </div>
+        <body style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+            <h3 style="color:green;">✅ No vulnerabilities found in the latest scan.</h3>
         </body>
     </html>
     """
