@@ -49,11 +49,92 @@ for result in report.get("Results", []):
         total_vulnerabilities += 1
 
 # Read the HTML template and insert values
-with open("email_template.html", "r") as template_file:
-    email_body = template_file.read()
-    email_body = email_body.replace("{{DATE}}", current_date)
-    email_body = email_body.replace("{{TOTAL_VULNERABILITIES}}", str(total_vulnerabilities))
-    email_body = email_body.replace("{{VULNERABILITY_ROWS}}", "".join(vuln_rows))
+
+email_body = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Vulnerability Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #d32f2f;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background: #f44336;
+            color: white;
+        }
+        .severity-critical {
+            color: red;
+            font-weight: bold;
+        }
+        .severity-high {
+            color: orange;
+            font-weight: bold;
+        }
+        .severity-medium {
+            color: yellow;
+            font-weight: bold;
+        }
+        .severity-low {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Security Vulnerability Report 🚨</h1>
+        <p><b>Date:</b> {{DATE}}</p>
+        <p><b>Total Vulnerabilities Found:</b> {{TOTAL_VULNERABILITIES}}</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{VULNERABILITY_ROWS}}
+            </tbody>
+        </table>
+
+        <p><b>📎 Full scan report attached.</b></p>
+    </div>
+</body>
+</html>
+"""
+email_body = email_body.replace("{{DATE}}", current_date)
+email_body = email_body.replace("{{TOTAL_VULNERABILITIES}}", str(total_vulnerabilities))
+email_body = email_body.replace("{{VULNERABILITY_ROWS}}", "".join(vuln_rows))
 
 # Create email message
 msg = MIMEMultipart()
