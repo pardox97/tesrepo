@@ -25,22 +25,39 @@ for result in report.get("Results", []):
     
     for vuln in result.get("Vulnerabilities", []):
         vuln_summary.append(f"""
-        **CVE ID**: {vuln['VulnerabilityID']}
-        **Package**: {vuln['PkgName']} ({vuln['InstalledVersion']})
-        **Severity**: {vuln['Severity']}
-        **Fixed Version**: {vuln.get('FixedVersion', 'N/A')}
-        **Description**: {vuln['Description']}
-        **More Info**: {vuln['PrimaryURL']}
-        **Affected Target**: {target}
+        <hr>
+        <h3>🔹 {vuln['VulnerabilityID']}</h3>
+        <ul>
+            <li><b>Package:</b> {vuln['PkgName']} ({vuln['InstalledVersion']})</li>
+            <li><b>⚠️ Severity:</b> <b>{vuln['Severity']}</b></li>
+            <li><b>✅ Fixed Version:</b> {vuln.get('FixedVersion', 'N/A')}</li>
+            <li><b>📝 Description:</b> {vuln['Description']}</li>
+            <li><b>🔗 More Info:</b> <a href="{vuln['PrimaryURL']}">{vuln['PrimaryURL']}</a></li>
+            <li><b>🛠️ Affected Target:</b> {target}</li>
+        </ul>
         """)
 
-# Format the email body
+# Format the email body with HTML
 if vuln_summary:
-    email_body = "**Summary of High & Critical Vulnerabilities Found:**\n\n" + "\n\n".join(vuln_summary[:5])  # Limit to first 5 for brevity
-    email_body += f"\n\n📌 **Total Vulnerabilities Found**: {len(vuln_summary)}"
-    email_body += "\n\n📎 Full report attached."
+    email_body = f"""
+    <html>
+        <body>
+            <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
+            <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_summary)}</p>
+            <p>📎 Full report attached.</p>
+            {"".join(vuln_summary[:5])}  <!-- Show first 5 vulnerabilities -->
+            <hr>
+            <h3>🚀 Next Steps</h3>
+            <ul>
+                <li>🔹 Upgrade affected packages to the recommended fixed versions.</li>
+                <li>🔹 Investigate if any applications rely on these vulnerable libraries.</li>
+                <li>🔹 Monitor logs for any signs of exploitation.</li>
+            </ul>
+        </body>
+    </html>
+    """
 else:
-    email_body = "✅ No vulnerabilities found in the latest scan."
+    email_body = "<h3>✅ No vulnerabilities found in the latest scan.</h3>"
 
 # Create email message
 msg = MIMEMultipart()
@@ -48,8 +65,8 @@ msg["From"] = SENDER
 msg["To"] = RECIPIENT
 msg["Subject"] = SUBJECT
 
-# Add email body
-msg.attach(MIMEText(email_body, "plain"))
+# Add HTML body
+msg.attach(MIMEText(email_body, "html"))
 
 # Attach the full Trivy report
 with open(ATTACHMENT_PATH, "rb") as attachment:
