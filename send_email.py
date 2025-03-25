@@ -11,7 +11,7 @@ from email import encoders
 AWS_REGION = os.getenv("AWS_REGION")
 SENDER = "cardozomelford@gmail.com"  # Must be verified in AWS SES
 RECIPIENT = "cardozomelford@gmail.com"  # Must be verified in AWS SES
-SUBJECT = "🚨 Trivy Vulnerability Scan Report 🚨"
+SUBJECT = "🚨 Security Vulnerability Assessment Report 🚨"
 
 # Load the Trivy report
 ATTACHMENT_PATH = "trivy-report.json"
