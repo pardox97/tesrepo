@@ -10,6 +10,11 @@ on:
 jobs:
   scan-image:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ${{ fromJson('["' + github.event.inputs.ecr_repos  + '"]') }}  # Convert input string to list
+
+    name: Scan ECR Image for Vulnerabilities - ${{ matrix.repo }}  # 👈 Dynamically update the job name
 
     steps:
       - name: Checkout Code
