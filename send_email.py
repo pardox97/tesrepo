@@ -2,6 +2,7 @@ import boto3
 import os
 import json
 import base64
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -11,53 +12,48 @@ from email import encoders
 AWS_REGION = os.getenv("AWS_REGION")
 SENDER = "cardozomelford@gmail.com"  # Must be verified in AWS SES
 RECIPIENT = "cardozomelford@gmail.com"  # Must be verified in AWS SES
-SUBJECT = "🚨 Security Vulnerability Assessment Report 🚨"
+SUBJECT = "🚨 Security Vulnerability Report 🚨"
 
 # Load the Trivy report
 ATTACHMENT_PATH = "trivy-report.json"
 with open(ATTACHMENT_PATH, "r") as file:
     report = json.load(file)
 
+# Get Current Date
+current_date = datetime.now().strftime("%B %d, %Y")
+
 # Extract vulnerabilities
-vuln_summary = []
+vuln_rows = []
+total_vulnerabilities = 0
+
 for result in report.get("Results", []):
     target = result.get("Target", "Unknown Target")
-    
-    for vuln in result.get("Vulnerabilities", []):
-        vuln_summary.append(f"""
-        <hr>
-        <h3>🔹 {vuln['VulnerabilityID']}</h3>
-        <ul>
-            <li><b>Package:</b> {vuln['PkgName']} ({vuln['InstalledVersion']})</li>
-            <li><b>⚠️ Severity:</b> <b>{vuln['Severity']}</b></li>
-            <li><b>✅ Fixed Version:</b> {vuln.get('FixedVersion', 'N/A')}</li>
-            <li><b>📝 Description:</b> {vuln['Description']}</li>
-            <li><b>🔗 More Info:</b> <a href="{vuln['PrimaryURL']}">{vuln['PrimaryURL']}</a></li>
-            <li><b>🛠️ Affected Target:</b> {target}</li>
-        </ul>
-        """)
 
-# Format the email body with HTML
-if vuln_summary:
-    email_body = f"""
-    <html>
-        <body>
-            <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
-            <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_summary)}</p>
-            <p>📎 Full report attached.</p>
-            {"".join(vuln_summary[:5])}  <!-- Show first 5 vulnerabilities -->
-            <hr>
-            <h3>🚀 Next Steps</h3>
-            <ul>
-                <li>🔹 Upgrade affected packages to the recommended fixed versions.</li>
-                <li>🔹 Investigate if any applications rely on these vulnerable libraries.</li>
-                <li>🔹 Monitor logs for any signs of exploitation.</li>
-            </ul>
-        </body>
-    </html>
-    """
-else:
-    email_body = "<h3>✅ No vulnerabilities found in the latest scan.</h3>"
+    for vuln in result.get("Vulnerabilities", []):
+        severity_class = {
+            "CRITICAL": "severity-critical",
+            "HIGH": "severity-high",
+            "MEDIUM": "severity-medium",
+            "LOW": "severity-low",
+        }.get(vuln["Severity"].upper(), "")
+
+        vuln_rows.append(f"""
+            <tr>
+                <td>{total_vulnerabilities + 1}</td>
+                <td>{vuln['Title']}</td>
+                <td>{vuln['Description']}</td>
+                <td class="{severity_class}">{vuln["Severity"]}</td>
+                <td>Open</td>
+            </tr>
+        """)
+        total_vulnerabilities += 1
+
+# Read the HTML template and insert values
+with open("email_template.html", "r") as template_file:
+    email_body = template_file.read()
+    email_body = email_body.replace("{{DATE}}", current_date)
+    email_body = email_body.replace("{{TOTAL_VULNERABILITIES}}", str(total_vulnerabilities))
+    email_body = email_body.replace("{{VULNERABILITY_ROWS}}", "".join(vuln_rows))
 
 # Create email message
 msg = MIMEMultipart()
