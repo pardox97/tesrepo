@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: ${{ fromJson('["' + github.event.inputs.ecr_repos  + '"]') }}  # Convert input string to list
+        repo: ${{ fromJson('["testrepo", "anotherrepo", "thirdrepo"]') if github.event_name == 'schedule' else inputs.ecr_repos.split(',') }}  # ✅ Fixed matrix handling
 
-    name: Scan ECR Image for Vulnerabilities - ${{ matrix.repo }}  # 👈 Dynamically update the job name
+    name: Scan ECR Image for Vulnerabilities - ${{ matrix.repo }}
 
     steps:
       - name: Checkout Code
