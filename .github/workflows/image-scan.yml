@@ -103,7 +103,7 @@ jobs:
       - name: Send Vulnerability Report via SES
         run: |
           pwd
-          python ecr_email/send_email.py
+          python .github/ecr_email/send_email.py
 
       - name: Fail on Critical Vulnerabilities
         run: |
