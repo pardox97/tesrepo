@@ -101,7 +101,9 @@ jobs:
         run: pip install boto3
 
       - name: Send Vulnerability Report via SES
-        run: python send_email.py
+        run: |
+          pwd
+          python ecr_email/send_email.py
 
       - name: Fail on Critical Vulnerabilities
         run: |
