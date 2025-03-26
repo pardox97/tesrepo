@@ -42,7 +42,7 @@ if vuln_summary:
     email_body = f"""
     <html>
         <body>
-            <h2>🚨 High & Critical Vulnerabilities Found 🚨</h2>
+            <h2>🚨 Critical / High Vulnerabilities Found 🚨</h2>
             <p>📌 <b>Total Vulnerabilities Found:</b> {len(vuln_summary)}</p>
             <p>📎 Full report attached.</p>
             {"".join(vuln_summary[:5])}  <!-- Show first 5 vulnerabilities -->
