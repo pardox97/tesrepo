@@ -68,6 +68,9 @@ jobs:
             echo "Scanning $IMAGE_URI ..."
             trivy image $IMAGE_URI --format json --severity CRITICAL,HIGH -o trivy-report.json 
             trivy image $IMAGE_URI --format sarif --severity CRITICAL,HIGH -o trivy-results.sarif
+            jq --arg image "$IMAGE_URI" \
+              '.runs[0].results |= map(.message.text |= "[IMAGE: \($image)] " + .)' \
+              trivy-results.sarif > trivy-results-patched.sarif
           done
 
       # - name: Scan Image with Trivy and Save Report
