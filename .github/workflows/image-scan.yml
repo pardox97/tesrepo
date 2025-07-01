@@ -67,6 +67,7 @@ jobs:
             IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO:$LATEST_TAG"
             echo "Scanning $IMAGE_URI ..."
             trivy image $IMAGE_URI --format json --severity CRITICAL,HIGH -o trivy-report.json 
+            trivy image $IMAGE_URI --format json --severity CRITICAL,HIGH -o trivy-results.sarif
           done
 
       # - name: Scan Image with Trivy and Save Report
@@ -104,6 +105,11 @@ jobs:
         run: |
           pwd
           python .github/ecr_email/send_email.py
+      
+      - name: Upload Trivy SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy-results.sarif
 
       - name: Fail on Critical Vulnerabilities
         run: |
