@@ -10,6 +10,8 @@ on:
 permissions:
   id-token: write           # Required for OIDC
   contents: read
+  security-events: write
+  
 jobs:
   scan-image:
     runs-on: ubuntu-latest
