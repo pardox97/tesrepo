@@ -79,9 +79,7 @@ msg.attach(attachment_part)
 # Send email using AWS SES
 ses_client = boto3.client(
     "ses",
-    region_name=AWS_REGION,
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=AWS_REGION
 )
 
 response = ses_client.send_raw_email(
