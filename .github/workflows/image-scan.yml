@@ -52,15 +52,6 @@ jobs:
       # - name: Install jq
       #   run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Install Cosign
-        run: |
-          curl -s https://api.github.com/repos/sigstore/cosign/releases/latest \
-            | grep "browser_download_url.*cosign-linux-amd64" \
-            | cut -d '"' -f 4 \
-            | xargs curl -Lo cosign
-          chmod +x cosign
-          sudo mv cosign /usr/local/bin/
-
 
       # - name: Install Trivy
       #   run: |
