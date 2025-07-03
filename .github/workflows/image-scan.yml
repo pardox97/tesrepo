@@ -76,7 +76,7 @@ jobs:
           TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r .tag_name | sed 's/^v//')
           TRIVY_BINARY="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
           TRIVY_SIG="${TRIVY_BINARY}.sig"
-          AQUA_PUBLIC_KEY="https://aquasecurity.github.io/trivy-repo/public.key"
+          AQUA_PUBLIC_KEY="https://aquasecurity.github.io/trivy-repo/rsa.pem"
       
           echo "📥 Downloading Trivy and its signature..."
           curl -LO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_BINARY}"
