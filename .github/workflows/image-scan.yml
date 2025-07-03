@@ -52,11 +52,46 @@ jobs:
       # - name: Install jq
       #   run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Install Trivy
+      - name: Install Cosign
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-          sudo mv ./bin/trivy /usr/local/bin/
-          trivy --version  # Verify installation
+          curl -s https://api.github.com/repos/sigstore/cosign/releases/latest \
+            | grep "browser_download_url.*cosign-linux-amd64" \
+            | cut -d '"' -f 4 \
+            | xargs curl -Lo cosign
+          chmod +x cosign
+          sudo mv cosign /usr/local/bin/
+
+
+      # - name: Install Trivy
+      #   run: |
+      #     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      #     sudo mv ./bin/trivy /usr/local/bin/
+      #     trivy --version  # Verify installation
+      #     echo "🔍 Fetching latest Trivvy Vulnerability DB."
+      #     trivy image --download-db-only
+
+      - name: Install and Verify Latest Trivy
+        run: |
+          echo "📦 Fetching latest Trivy version..."
+          TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r .tag_name | sed 's/^v//')
+          TRIVY_BINARY="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          TRIVY_SIG="${TRIVY_BINARY}.sig"
+          AQUA_PUBLIC_KEY="https://aquasecurity.github.io/trivy-repo/public.key"
+      
+          echo "📥 Downloading Trivy and its signature..."
+          curl -LO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_BINARY}"
+          curl -LO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_SIG}"
+      
+          echo "🔐 Downloading Aqua public key..."
+          curl -fsSL "$AQUA_PUBLIC_KEY" -o trivy.pub
+      
+          echo "🔎 Verifying Trivy signature..."
+          cosign verify-blob --key trivy.pub --signature "$TRIVY_SIG" "$TRIVY_BINARY"
+      
+          echo "✅ Extracting Trivy..."
+          tar zxvf "$TRIVY_BINARY"
+          sudo mv trivy /usr/local/bin/
+          trivy --version
           echo "🔍 Fetching latest Trivvy Vulnerability DB."
           trivy image --download-db-only
 
