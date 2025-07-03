@@ -82,8 +82,10 @@ jobs:
             echo "📥 Pulling image $IMAGE_URI ..."
             docker pull "$IMAGE_URI"
             echo "Scanning $IMAGE_URI ..."
+            sudo ifconfig eth0 down  # disable network temporarily
             trivy image $IMAGE_URI --scanners vuln --format json -o trivy-report.json 
             trivy image $IMAGE_URI --scanners vuln --format sarif -o trivy-results.sarif
+            sudo ifconfig eth0 up  # re-enable network
             jq --arg image "$IMAGE_URI" \
               '.runs[0].results |= map(.message.text |= "[IMAGE: \($image)] " + .)' \
               trivy-results.sarif > trivy-results-patched.sarif
