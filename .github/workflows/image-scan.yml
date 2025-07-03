@@ -79,6 +79,8 @@ jobs:
             fi
 
             IMAGE_URI="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO:$LATEST_TAG"
+            echo "📥 Pulling image $IMAGE_URI ..."
+            docker pull "$IMAGE_URI"
             echo "Scanning $IMAGE_URI ..."
             trivy image $IMAGE_URI --scanners vuln --format json -o trivy-report.json 
             trivy image $IMAGE_URI --scanners vuln --format sarif -o trivy-results.sarif
