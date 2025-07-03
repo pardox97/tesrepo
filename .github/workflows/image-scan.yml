@@ -70,28 +70,20 @@ jobs:
       #     echo "🔍 Fetching latest Trivvy Vulnerability DB."
       #     trivy image --download-db-only
 
-      - name: Install and Verify Latest Trivy
+      - name: Install Trivy from official DEB repository
         run: |
-          echo "📦 Fetching latest Trivy version..."
-          TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r .tag_name | sed 's/^v//')
-          TRIVY_BINARY="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-          TRIVY_SIG="${TRIVY_BINARY}.sig"
-          AQUA_PUBLIC_KEY="https://aquasecurity.github.io/trivy-repo/rsa.pem"
-      
-          echo "📥 Downloading Trivy and its signature..."
-          curl -LO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_BINARY}"
-          curl -LO "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${TRIVY_SIG}"
-      
-          echo "🔐 Downloading Aqua public key..."
-          curl -fsSL "$AQUA_PUBLIC_KEY" -o trivy.pub
-      
-          echo "🔎 Verifying Trivy signature..."
-          cosign verify-blob --key trivy.pub --signature "$TRIVY_SIG" "$TRIVY_BINARY"
-      
-          echo "✅ Extracting Trivy..."
-          tar zxvf "$TRIVY_BINARY"
-          sudo mv trivy /usr/local/bin/
-          trivy --version
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          
+          # Import the public key
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          
+          # Add the Trivy repository
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          
+          sudo apt-get update
+          sudo apt-get install -y trivy
+          trivy --version # Verify installation
           echo "🔍 Fetching latest Trivvy Vulnerability DB."
           trivy image --download-db-only
 
