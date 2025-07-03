@@ -57,6 +57,8 @@ jobs:
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
           sudo mv ./bin/trivy /usr/local/bin/
           trivy --version  # Verify installation
+          echo "🔍 Fetching latest Trivvy Vulnerability DB."
+          trivy image --download-db-only
 
       - name: Scan Image with Trivy and Save Report
         run: |
@@ -83,8 +85,8 @@ jobs:
             docker pull "$IMAGE_URI"
             echo "Scanning $IMAGE_URI ..."
             sudo ifconfig eth0 down  # disable network temporarily
-            trivy image $IMAGE_URI --scanners vuln --format json -o trivy-report.json 
-            trivy image $IMAGE_URI --scanners vuln --format sarif -o trivy-results.sarif
+            trivy image $IMAGE_URI --scanners vuln --skip-update --offline-scan --format json -o trivy-report.json 
+            trivy image $IMAGE_URI --scanners vuln --skip-update --offline-scan --format sarif -o trivy-results.sarif
             sudo ifconfig eth0 up  # re-enable network
             jq --arg image "$IMAGE_URI" \
               '.runs[0].results |= map(.message.text |= "[IMAGE: \($image)] " + .)' \
