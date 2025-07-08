@@ -125,13 +125,33 @@ jobs:
             echo "✅ trivy-report.json exists!"
             ls -lh trivy-report.json
           fi
-
+      - name: Convert JSON to CSV
+        run: |
+          echo '"VulnerabilityID","Package","Version","FixedVersion","Severity","Title"' > trivy-report.csv
+          jq -r '
+            .Results[].Vulnerabilities[] |
+            [
+              .VulnerabilityID,
+              .PkgName,
+              .InstalledVersion,
+              .FixedVersion,
+              .Severity,
+              .Title
+            ] | @csv
+          ' trivy-report.json >> trivy-report.csv
+          
       - name: Upload Vulnerability Report
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
-
+          
+      - name: Upload Vulnerability CSV Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-csv
+          path: trivy-report.csv
+          
       - name: Display Vulnerabilities
         run: cat trivy-report.json | jq '.Results[].Vulnerabilities[] | {ID, PkgName, InstalledVersion, Severity, Title, Description}'
 
