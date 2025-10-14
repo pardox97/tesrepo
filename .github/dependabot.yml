@@ -1,0 +1,28 @@
+# .github/dependabot.yml
+version: 2
+updates:
+  # ─────────────────────────────
+  # 1️⃣ Node.js dependencies (package-lock.json)
+  # ─────────────────────────────
+  - package-ecosystem: npm
+    directory: "/"  # root directory where your package-lock.json exists
+    schedule:
+      interval: daily
+    # optional: limit how many PRs open at once
+    open-pull-requests-limit: 5
+    # optional: let Dependabot auto-merge safe updates (only if tests pass)
+    automerge: false
+    commit-message:
+      prefix: "chore(npm): bump"
+
+  # ─────────────────────────────
+  # 2️⃣ Python dependencies (requirements.txt)
+  # ─────────────────────────────
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 5
+    automerge: false
+    commit-message:
+      prefix: "chore(pip): bump"
