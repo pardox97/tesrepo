@@ -1,0 +1,9 @@
+{
+  "name": "sre",
+  "description": "",
+  "version": "0.1.0",
+  "devDependencies": {
+    "serverless-python-requirements": "^6.0.0",
+    "serverless-tag-cloud-watch-log-groups": "^1.2.5"
+  }
+}
